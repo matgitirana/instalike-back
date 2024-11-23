@@ -1,5 +1,6 @@
-import { createPost, getAllPosts } from '../models/postModel.js'
+import { createPost, getAllPosts, updatePost } from '../models/postModel.js'
 import fs from 'fs'
+import generateDescriptionWithGemini from '../services/geminiService.js'
 
 export async function listPosts(req, res) {
   const posts = await getAllPosts()
@@ -32,5 +33,26 @@ export async function uploadImage(req, res) {
   } catch (error) {
     console.error(error.message)
     res.status(500).json({ Erro: 'Request failed' })
+  }
+}
+
+export async function updateNewPost(req, res) {
+  const id = req.params.id
+  const imageUrl = `http://localhost:3000/${id}.png`
+
+  try {
+    const imgBuffer = fs.readFileSync(`uploads/${id}.png`)
+    const description = await generateDescriptionWithGemini(imgBuffer)
+    const post = {
+      imgUrl: imageUrl,
+      description: description,
+      alt: req.body.alt,
+    }
+
+    const createdPost = await updatePost(id, post)
+    res.status(200).json(createdPost)
+  } catch (error) {
+    console.error(error.message)
+    res.status(500).json({ Error: 'Request failed' })
   }
 }
